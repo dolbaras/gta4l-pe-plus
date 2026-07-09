@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  local_manifest для сборки PixelExperience Plus (Android 11) на Samsung Galaxy Tab A7 LTE (gta4l / SM-T505).
+  Положить в .repo/local_manifests/ ПОСЛЕ `repo init` базы PixelExperience eleven-plus, затем `repo sync`.
+
+  ЗАМЕНИ  YOURUSER  на свой GitHub-логин (или org):
+     sed -i 's/YOURUSER/<твой_логин>/' gta4l.xml
+
+  local_manifest for building PixelExperience Plus (Android 11) on the Galaxy Tab A7 LTE (gta4l / SM-T505).
+  Put it in .repo/local_manifests/ AFTER `repo init` of the PixelExperience eleven-plus base, then `repo sync`.
+  Replace YOURUSER with your GitHub user/org.
+-->
+<manifest>
+  <remote name="gta4l-gh" fetch="https://github.com/YOURUSER/" />
+
+  <!-- device tree: ветка eleven-plus (продукт aosp_gta4l) / device tree on the eleven-plus branch -->
+  <project path="device/samsung/gta4l" name="android_device_samsung_gta4l" remote="gta4l-gh" revision="eleven-plus" />
+
+  <!-- остальное ROM-агностично, ветка lineage-18.1 / the rest is ROM-agnostic, lineage-18.1 branch -->
+  <project path="device/samsung/gta4l-common" name="android_device_samsung_gta4l-common" remote="gta4l-gh" revision="lineage-18.1" />
+  <project path="vendor/samsung/gta4l" name="android_vendor_samsung_gta4l" remote="gta4l-gh" revision="lineage-18.1" />
+  <project path="vendor/samsung/gta4l-common" name="android_vendor_samsung_gta4l-common" remote="gta4l-gh" revision="lineage-18.1" />
+  <project path="kernel/samsung/sm6115" name="android_kernel_samsung_sm6115" remote="gta4l-gh" revision="lineage-18.1" />
+
+  <!-- hardware/samsung: samsung-keymaster (TARGET_KEYMASTER_VARIANT := samsung). Есть в манифесте
+       LineageOS, в манифесте PE НЕТ. Без него keymaster@4.0 HAL не поднимается -> boot виснет ->
+       software-watchdog panic ~102с. / Provides the samsung keymaster HAL; absent from PE's manifest. -->
+  <remote name="los" fetch="https://github.com/LineageOS/" />
+  <project path="hardware/samsung" name="android_hardware_samsung" remote="los" revision="lineage-18.1" />
+
+  <!-- external/faceunlock: оригинал на мёртвом gitlab.pixelexperience.org. frameworks/base PE жёстко
+       зависит от модуля faceunlock_framework -> берём из архива PE. / Original is on the dead PE gitlab;
+       frameworks/base hard-depends on faceunlock_framework, so pull it from the PE archive. -->
+  <remove-project name="external_faceunlock" />
+  <remote name="pe-archive" fetch="https://github.com/PixelExperienceArchive/" />
+  <project path="external/faceunlock" name="external_faceunlock" remote="pe-archive" revision="eleven" />
+</manifest>
