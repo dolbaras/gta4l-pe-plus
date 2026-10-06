@@ -1,0 +1,223 @@
+diff --git a/core/java/com/android/internal/util/custom/PixelPropsUtils.java b/core/java/com/android/internal/util/custom/PixelPropsUtils.java
+index d342e3db..3159d9a6 100644
+--- a/core/java/com/android/internal/util/custom/PixelPropsUtils.java
++++ b/core/java/com/android/internal/util/custom/PixelPropsUtils.java
+@@ -15,6 +15,7 @@
+  */
+ package com.android.internal.util.custom;
+ 
++import android.app.Application;
+ import android.os.Build;
+ import android.util.Log;
+ 
+@@ -32,8 +33,9 @@ public class PixelPropsUtils {
+     private static final Map<String, Object> propsToChangePixelXL;
+     private static final Map<String, Object> propsToChangePixel3XL;
+ 
++    // Not com.android.vending: told it runs on a Pixel, Play Store opens Pixel-only activities
++    // (com.google.android.permissioncontroller) that this device does not have and crashes.
+     private static final String[] packagesToChange = {
+-            "com.android.vending",
+             "com.breel.wallpapers20",
+             "com.google.android.apps.customization.pixel",
+             "com.google.android.apps.fitness",
+@@ -72,7 +74,9 @@ public class PixelPropsUtils {
+         propsToChange.put("DEVICE", "redfin");
+         propsToChange.put("PRODUCT", "redfin");
+         propsToChange.put("MODEL", "Pixel 5");
+-        propsToChange.put("FINGERPRINT", "google/redfin/redfin:12/SQ1A.211205.008/7888514:user/release-keys");
++        // Same Android release as this ROM (SDK 30): an Android 12 Pixel build on an
++        // Android 11 system is an inconsistent device.
++        propsToChange.put("FINGERPRINT", "google/redfin/redfin:11/RQ3A.211001.001/7641976:user/release-keys");
+         propsToChangePixelXL = new HashMap<>();
+         propsToChangePixelXL.put("BRAND", "google");
+         propsToChangePixelXL.put("MANUFACTURER", "Google");
+@@ -89,10 +93,22 @@ public class PixelPropsUtils {
+         propsToChangePixel3XL.put("FINGERPRINT", "google/crosshatch/crosshatch:12/SP1A.210812.015/7679548:user/release-keys");
+     }
+ 
++    private static final String PACKAGE_GMS = "com.google.android.gms";
++    private static final String PROCESS_GMS_UNSTABLE = PACKAGE_GMS + ".unstable";
++    // Security patch level of the spoofed Pixel 5 build above.
++    private static final String SECURITY_PATCH_PIXEL = "2021-10-05";
++
++    private static volatile boolean sIsGmsUnstable = false;
++
+     public static void setProps(String packageName) {
+         if (packageName == null){
+             return;
+         }
++        if (PACKAGE_GMS.equals(packageName)
++                && PROCESS_GMS_UNSTABLE.equals(Application.getProcessName())) {
++            sIsGmsUnstable = true;
++            setVersionFieldValue("SECURITY_PATCH", SECURITY_PATCH_PIXEL);
++        }
+         if (Arrays.asList(packagesToChange).contains(packageName)){
+             if (DEBUG){
+                 Log.d(TAG, "Defining props for: " + packageName);
+@@ -133,6 +149,38 @@ public class PixelPropsUtils {
+         }
+     }
+ 
++    private static void setVersionFieldValue(String key, Object value) {
++        try {
++            Field field = Build.VERSION.class.getDeclaredField(key);
++            field.setAccessible(true);
++            field.set(null, value);
++            field.setAccessible(false);
++        } catch (NoSuchFieldException | IllegalAccessException e) {
++            Log.e(TAG, "Failed to set version field " + key, e);
++        }
++    }
++
++    private static boolean isCallerDroidGuard() {
++        for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
++            if (element.getClassName().toLowerCase().contains("droidguard")) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    /**
++     * Called by AndroidKeyStoreSpi before it returns a certificate chain. The key attestation
++     * chain carries the real (unlocked) bootloader state and this tablet's identity, which
++     * contradict the Pixel 5 that com.google.android.gms reports; DroidGuard in
++     * com.google.android.gms.unstable gets no chain, as on a device without attestation.
++     */
++    public static void onEngineGetCertificateChain() {
++        if (sIsGmsUnstable && isCallerDroidGuard()) {
++            throw new UnsupportedOperationException();
++        }
++    }
++
+     private static void setPropValue(String key, Object value){
+         try {
+             if (DEBUG){
+diff --git a/keystore/java/android/security/keystore/AndroidKeyStoreSpi.java b/keystore/java/android/security/keystore/AndroidKeyStoreSpi.java
+index 51c42520..22e71b03 100644
+--- a/keystore/java/android/security/keystore/AndroidKeyStoreSpi.java
++++ b/keystore/java/android/security/keystore/AndroidKeyStoreSpi.java
+@@ -30,6 +30,8 @@ import android.security.keystore.SecureKeyImportUnavailableException;
+ import android.security.keystore.WrappedKeyEntry;
+ import android.util.Log;
+ 
++import com.android.internal.util.custom.PixelPropsUtils;
++
+ import libcore.util.EmptyArray;
+ 
+ import java.io.ByteArrayInputStream;
+@@ -113,6 +115,7 @@ public class AndroidKeyStoreSpi extends KeyStoreSpi {
+ 
+     @Override
+     public Certificate[] engineGetCertificateChain(String alias) {
++        PixelPropsUtils.onEngineGetCertificateChain();
+         if (alias == null) {
+             throw new NullPointerException("alias == null");
+         }
+diff --git a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+index 2a43e0da..4f1f3887 100644
+--- a/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
++++ b/packages/SystemUI/src/com/android/systemui/screenrecord/ScreenMediaRecorder.java
+@@ -30,6 +30,8 @@ import android.graphics.Bitmap;
+ import android.hardware.display.DisplayManager;
+ import android.hardware.display.VirtualDisplay;
+ import android.media.MediaCodecInfo;
++import android.media.MediaCodecList;
++import android.media.MediaFormat;
+ import android.media.MediaMuxer;
+ import android.media.MediaRecorder;
+ import android.media.ThumbnailUtils;
+@@ -44,6 +46,7 @@ import android.os.ServiceManager;
+ import android.provider.MediaStore;
+ import android.util.DisplayMetrics;
+ import android.util.Log;
++import android.util.Range;
+ import android.util.Size;
+ import android.view.Surface;
+ import android.view.WindowManager;
+@@ -130,6 +133,10 @@ public class ScreenMediaRecorder {
+         int maxRefreshRate = mContext.getResources().getInteger(
+                 com.android.internal.R.integer.config_screenRecorderMaxFramerate);
+         if (maxRefreshRate != 0 && refereshRate > maxRefreshRate) refereshRate = maxRefreshRate;
++        int[] dimens = getSupportedSize(screenWidth, screenHeight, refereshRate);
++        screenWidth = dimens[0];
++        screenHeight = dimens[1];
++        refereshRate = dimens[2];
+         int vidBitRate = screenHeight * screenWidth * refereshRate / VIDEO_FRAME_RATE
+                 * VIDEO_FRAME_RATE_TO_RESOLUTION_RATIO;
+         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+@@ -175,6 +182,56 @@ public class ScreenMediaRecorder {
+ 
+     }
+ 
++    /**
++     * Find the largest size, up to the screen size and with its aspect ratio, that the hardware
++     * AVC encoder accepts, and the highest frame rate up to {@code refreshRate} it supports at
++     * that size. The encoder may be smaller than the panel (here 1920x1088 against 1200x2000);
++     * asking it for the panel size fails to configure or falls back to software encoding.
++     *
++     * @return {width, height, frame rate}
++     */
++    private static int[] getSupportedSize(int screenWidth, int screenHeight, int refreshRate) {
++        MediaCodecInfo.VideoCapabilities caps = null;
++        for (MediaCodecInfo info : new MediaCodecList(MediaCodecList.REGULAR_CODECS)
++                .getCodecInfos()) {
++            if (!info.isEncoder() || !info.isHardwareAccelerated()) continue;
++            for (String type : info.getSupportedTypes()) {
++                if (type.equalsIgnoreCase(MediaFormat.MIMETYPE_VIDEO_AVC)) {
++                    caps = info.getCapabilitiesForType(type).getVideoCapabilities();
++                    break;
++                }
++            }
++            if (caps != null) break;
++        }
++        if (caps == null) {
++            Log.w(TAG, "No hardware AVC encoder, recording at screen size");
++            return new int[] {screenWidth, screenHeight, refreshRate};
++        }
++
++        final int widthAlign = caps.getWidthAlignment();
++        final int heightAlign = caps.getHeightAlignment();
++        int width = 0;
++        int height = 0;
++        for (int percent = 100; percent > 0 && width == 0; percent--) {
++            int w = Math.max(widthAlign, screenWidth * percent / 100 / widthAlign * widthAlign);
++            int h = Math.max(heightAlign,
++                    screenHeight * percent / 100 / heightAlign * heightAlign);
++            if (caps.isSizeSupported(w, h)) {
++                width = w;
++                height = h;
++            }
++        }
++        if (width == 0) {
++            Log.w(TAG, "Hardware AVC encoder supports no size with the screen aspect ratio");
++            return new int[] {screenWidth, screenHeight, refreshRate};
++        }
++        Range<Double> rates = caps.getSupportedFrameRatesFor(width, height);
++        int rate = Math.max(1, Math.min(refreshRate, (int) Math.floor(rates.getUpper())));
++        Log.d(TAG, "Recording " + width + "x" + height + "@" + rate + " for screen "
++                + screenWidth + "x" + screenHeight + "@" + refreshRate);
++        return new int[] {width, height, rate};
++    }
++
+     /**
+     * Start screen recording
+     */
+diff --git a/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml b/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml
+index 96ed7b4c..be4fd456 100644
+--- a/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml
++++ b/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml
+@@ -30,8 +30,10 @@
+     <!-- Controls whether the navigation bar lets through taps. -->
+     <bool name="config_navBarTapThrough">true</bool>
+ 
+-    <!-- Controls the size of the back gesture inset. -->
+-    <dimen name="config_backGestureInset">24dp</dimen>
++    <!-- Controls the size of the back gesture inset. Raised 24dp->40dp so the left/right
++         back-swipe zones are more forgiving on the SM-T50x forced-1080p (upscaled) display,
++         where touch input near the edges is scaled and less precise. -->
++    <dimen name="config_backGestureInset">40dp</dimen>
+ 
+     <!-- Controls whether the navbar needs a scrim with
+      {@link Window#setEnsuringNavigationBarContrastWhenTransparent}. -->

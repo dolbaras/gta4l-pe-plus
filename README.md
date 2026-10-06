@@ -15,9 +15,9 @@ mkdir -p .repo/local_manifests
 cp snippets/gta4l.xml .repo/local_manifests/     # замени YOURUSER на свой логин
 repo sync -c -j$(nproc)
 bash patches/fix-pe-build.sh                      # оффлайн-обходы (см. ниже)
+for f in patches/*.patch; do d=$(basename $f .patch | tr _ /); git -C $d apply "$PWD/$f"; done   # платформенные правки / platform patches
 source build/envsetup.sh
 lunch aosp_gta4l-userdebug
-export ALLOW_MISSING_DEPENDENCIES=true
 mka bacon
 ```
 Готовый zip — в `out/target/product/gta4l/`.
@@ -27,7 +27,6 @@ mka bacon
 - **`hardware/samsung`** добавлен в local_manifest (в манифесте PE его нет, а samsung-keymaster без него не собирается → устройство виснет на загрузке).
 - **`external/faceunlock`** перенаправлен на архив `PixelExperienceArchive` (оригинал на мёртвом gitlab PE, но `frameworks/base` от него зависит).
 - **`patches/fix-pe-build.sh`** глушит `get_official_devices.py` (лез на мёртвый сервер PE без таймаута).
-- **`ALLOW_MISSING_DEPENDENCIES=true`** — из-за отсутствующих в PE-инфре мелких модулей.
 - Если `repo sync` падает на shallow-репо (cts/exoplayer): `repo sync --force-sync -c -j$(nproc)`.
 
 ### Прошивка
@@ -52,9 +51,9 @@ mkdir -p .repo/local_manifests
 cp snippets/gta4l.xml .repo/local_manifests/     # set your GitHub user instead of YOURUSER
 repo sync -c -j$(nproc)
 bash patches/fix-pe-build.sh                      # offline workarounds (see below)
+for f in patches/*.patch; do d=$(basename $f .patch | tr _ /); git -C $d apply "$PWD/$f"; done   # платформенные правки / platform patches
 source build/envsetup.sh
 lunch aosp_gta4l-userdebug
-export ALLOW_MISSING_DEPENDENCIES=true
 mka bacon
 ```
 Output zip in `out/target/product/gta4l/`.
@@ -64,7 +63,6 @@ PixelExperience infra is partly offline, so:
 - **`hardware/samsung`** is added via the local_manifest (missing from PE's manifest; the samsung keymaster won't build without it → the device hangs on boot).
 - **`external/faceunlock`** is redirected to the `PixelExperienceArchive` (the original is on the dead PE gitlab, but `frameworks/base` depends on it).
 - **`patches/fix-pe-build.sh`** stubs `get_official_devices.py` (it hung on the dead PE server with no timeout).
-- **`ALLOW_MISSING_DEPENDENCIES=true`** for small modules missing from PE's infra.
 - If `repo sync` fails on shallow repos (cts/exoplayer): `repo sync --force-sync -c -j$(nproc)`.
 
 ### Flashing

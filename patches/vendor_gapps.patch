@@ -1,0 +1,64 @@
+diff --git a/product/packages/privileged_apps/DMService/Android.mk b/product/packages/privileged_apps/DMService/Android.mk
+index 8a4a785..c4a447b 100644
+--- a/product/packages/privileged_apps/DMService/Android.mk
++++ b/product/packages/privileged_apps/DMService/Android.mk
+@@ -28,20 +28,11 @@ LOCAL_PRODUCT_MODULE := true
+ LOCAL_PRIVILEGED_MODULE := true
+ LOCAL_MODULE_SUFFIX := $(COMMON_ANDROID_PACKAGE_SUFFIX)
+ LOCAL_MULTILIB := 32
++# The app's JNI libs live in /product/lib. Link them from the app directory as part of
++# installing this module, so they exist only when the product installs the app (adding
++# the links to ALL_DEFAULT_INSTALLED_MODULES installed the app on every product).
++LOCAL_POST_INSTALL_CMD := \
++    mkdir -p $(TARGET_OUT_PRODUCT)/priv-app/DMService/lib/arm && \
++    ln -sf /product/lib/libdmengine.so $(TARGET_OUT_PRODUCT)/priv-app/DMService/lib/arm/libdmengine.so && \
++    ln -sf /product/lib/libdmjavaplugin.so $(TARGET_OUT_PRODUCT)/priv-app/DMService/lib/arm/libdmjavaplugin.so
+ include $(BUILD_PREBUILT)
+-
+-LIBDMENGINE_SYMLINK := $(TARGET_OUT_PRODUCT)/priv-app/DMService/lib/arm/libdmengine.so
+-$(LIBDMENGINE_SYMLINK): $(LOCAL_INSTALLED_MODULE)
+-	@echo "libdmengine link: $@"
+-	@mkdir -p $(dir $@)
+-	@rm -rf $@
+-	$(hide) ln -sf /product/lib/libdmengine.so $@
+-
+-LIBDMENGINEPLUGIN_SYMLINK := $(TARGET_OUT_PRODUCT)/priv-app/DMService/lib/arm/libdmjavaplugin.so
+-$(LIBDMENGINEPLUGIN_SYMLINK): $(LOCAL_INSTALLED_MODULE)
+-	@echo "libdmjavaplugin link: $@"
+-	@mkdir -p $(dir $@)
+-	@rm -rf $@
+-	$(hide) ln -sf /product/lib/libdmjavaplugin.so $@
+-
+-ALL_DEFAULT_INSTALLED_MODULES += $(LIBDMENGINE_SYMLINK) $(LIBDMENGINEPLUGIN_SYMLINK)
+diff --git a/product/packages/privileged_apps/MyVerizonServices/Android.mk b/product/packages/privileged_apps/MyVerizonServices/Android.mk
+index d5eca87..aa31b57 100644
+--- a/product/packages/privileged_apps/MyVerizonServices/Android.mk
++++ b/product/packages/privileged_apps/MyVerizonServices/Android.mk
+@@ -27,20 +27,11 @@ LOCAL_MODULE_CLASS := APPS
+ LOCAL_PRODUCT_MODULE := true
+ LOCAL_PRIVILEGED_MODULE := true
+ LOCAL_MODULE_SUFFIX := $(COMMON_ANDROID_PACKAGE_SUFFIX)
++# The app's JNI libs live in /product/lib64. Link them from the app directory as part of
++# installing this module, so they exist only when the product installs the app (adding
++# the links to ALL_DEFAULT_INSTALLED_MODULES installed the app on every product).
++LOCAL_POST_INSTALL_CMD := \
++    mkdir -p $(TARGET_OUT_PRODUCT)/priv-app/MyVerizonServices/lib/arm64 && \
++    ln -sf /product/lib64/libakuaf.so $(TARGET_OUT_PRODUCT)/priv-app/MyVerizonServices/lib/arm64/libakuaf.so && \
++    ln -sf /product/lib64/libmotricity.so $(TARGET_OUT_PRODUCT)/priv-app/MyVerizonServices/lib/arm64/libmotricity.so
+ include $(BUILD_PREBUILT)
+-
+-LIBAKUAF_SYMLINK := $(TARGET_OUT_PRODUCT)/priv-app/MyVerizonServices/lib/arm64/libakuaf.so
+-$(LIBAKUAF_SYMLINK): $(LOCAL_INSTALLED_MODULE)
+-	@echo "libakuaf link: $@"
+-	@mkdir -p $(dir $@)
+-	@rm -rf $@
+-	$(hide) ln -sf /product/lib64/libakuaf.so $@
+-
+-LIBMOTRICITY_SYMLINK := $(TARGET_OUT_PRODUCT)/priv-app/MyVerizonServices/lib/arm64/libmotricity.so
+-$(LIBMOTRICITY_SYMLINK): $(LOCAL_INSTALLED_MODULE)
+-	@echo "libmotricity link: $@"
+-	@mkdir -p $(dir $@)
+-	@rm -rf $@
+-	$(hide) ln -sf /product/lib64/libmotricity.so $@
+-
+-ALL_DEFAULT_INSTALLED_MODULES += $(LIBAKUAF_SYMLINK) $(LIBMOTRICITY_SYMLINK)

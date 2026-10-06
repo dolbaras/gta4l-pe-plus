@@ -1,0 +1,19 @@
+diff --git a/src/traced/probes/ftrace/proto_translation_table.cc b/src/traced/probes/ftrace/proto_translation_table.cc
+index 44fe5f5..9234096 100644
+--- a/src/traced/probes/ftrace/proto_translation_table.cc
++++ b/src/traced/probes/ftrace/proto_translation_table.cc
+@@ -122,9 +122,13 @@ bool MergeFieldInfo(const FtraceEvent::Field& ftrace_field,
+   PERFETTO_DCHECK(!field->ftrace_size);
+   PERFETTO_DCHECK(!field->ftrace_type);
+ 
++  // A kernel may describe a field differently from the compile-time schema
++  // (e.g. f2fs_truncate_partial_nodes.nid is "nid_t nid[3]" in newer f2fs).
++  // Drop the field, as is done below when no translation strategy exists,
++  // instead of aborting traced_probes for every ftrace session.
+   if (!InferFtraceType(ftrace_field.type_and_name, ftrace_field.size,
+                        ftrace_field.is_signed, &field->ftrace_type)) {
+-    PERFETTO_FATAL(
++    PERFETTO_ELOG(
+         "Failed to infer ftrace field type for \"%s.%s\" (type:\"%s\" "
+         "size:%d "
+         "signed:%d)",
