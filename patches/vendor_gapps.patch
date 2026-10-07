@@ -1,3 +1,66 @@
+diff --git a/product/blobs/product_blobs.mk b/product/blobs/product_blobs.mk
+index 3638e6d..2d8b57e 100644
+--- a/product/blobs/product_blobs.mk
++++ b/product/blobs/product_blobs.mk
+@@ -19,11 +19,9 @@
+ ifneq ($(filter walleye taimen blueline crosshatch bonito sargo flame coral sunfish bramble redfin, $(TARGET_DEVICE)),)
+ PRODUCT_COPY_FILES += \
+     vendor/gapps/product/blobs/etc/ambient/matcher_tah.leveldb:$(TARGET_COPY_OUT_PRODUCT)/etc/ambient/matcher_tah.leveldb
+-endif
+-
+-PRODUCT_COPY_FILES += \
+-    vendor/gapps/product/blobs/etc/default-permissions/default-permissions.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/default-permissions/default-permissions.xml
+ 
++# US carrier device management (Verizon, Sprint, US Cellular) and Verizon network
++# features: config and libraries for apps that ship only on Pixel phones.
+ PRODUCT_COPY_FILES += \
+     vendor/gapps/product/blobs/etc/permissions/com.android.omadm.service.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.android.omadm.service.xml \
+     vendor/gapps/product/blobs/etc/permissions/com.android.sdm.plugins.connmo.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.android.sdm.plugins.connmo.xml \
+@@ -32,21 +30,29 @@ PRODUCT_COPY_FILES += \
+     vendor/gapps/product/blobs/etc/permissions/com.android.sdm.plugins.sprintdm.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.android.sdm.plugins.sprintdm.xml \
+     vendor/gapps/product/blobs/etc/permissions/com.android.sdm.plugins.usccdm.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.android.sdm.plugins.usccdm.xml \
+     vendor/gapps/product/blobs/etc/permissions/com.customermobile.preload.vzw.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.customermobile.preload.vzw.xml \
+-    vendor/gapps/product/blobs/etc/permissions/com.google.android.dialer.support.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.google.android.dialer.support.xml \
+     vendor/gapps/product/blobs/etc/permissions/com.google.omadm.trigger.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.google.omadm.trigger.xml \
+     vendor/gapps/product/blobs/etc/permissions/com.verizon.apn.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.verizon.apn.xml \
+     vendor/gapps/product/blobs/etc/permissions/com.verizon.services.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.verizon.services.xml \
+     vendor/gapps/product/blobs/etc/permissions/features-verizon.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/features-verizon.xml \
+     vendor/gapps/product/blobs/etc/permissions/obdm_permissions.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/obdm_permissions.xml \
++    vendor/gapps/product/blobs/etc/permissions/vzw_mvs_permissions.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/vzw_mvs_permissions.xml \
++    vendor/gapps/product/blobs/etc/sysconfig/allowlist_com.android.omadm.service.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/allowlist_com.android.omadm.service.xml \
++    vendor/gapps/product/blobs/lib/libdmengine.so:$(TARGET_COPY_OUT_PRODUCT)/lib/libdmengine.so \
++    vendor/gapps/product/blobs/lib/libdmjavaplugin.so:$(TARGET_COPY_OUT_PRODUCT)/lib/libdmjavaplugin.so
++endif
++
++PRODUCT_COPY_FILES += \
++    vendor/gapps/product/blobs/etc/default-permissions/default-permissions.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/default-permissions/default-permissions.xml
++
++PRODUCT_COPY_FILES += \
++    vendor/gapps/product/blobs/etc/permissions/com.google.android.dialer.support.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/com.google.android.dialer.support.xml \
+     vendor/gapps/product/blobs/etc/permissions/privapp-permissions-google-p.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/privapp-permissions-google-p.xml \
+-    vendor/gapps/product/blobs/etc/permissions/split-permissions-google.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/split-permissions-google.xml \
+-    vendor/gapps/product/blobs/etc/permissions/vzw_mvs_permissions.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/vzw_mvs_permissions.xml
++    vendor/gapps/product/blobs/etc/permissions/split-permissions-google.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/split-permissions-google.xml
+ 
+ PRODUCT_COPY_FILES += \
+     vendor/gapps/product/blobs/etc/preferred-apps/google.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/preferred-apps/google.xml
+ 
+ PRODUCT_COPY_FILES += \
+-    vendor/gapps/product/blobs/etc/sysconfig/allowlist_com.android.omadm.service.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/allowlist_com.android.omadm.service.xml \
+     vendor/gapps/product/blobs/etc/sysconfig/google-hiddenapi-package-whitelist.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/google-hiddenapi-package-whitelist.xml \
+     vendor/gapps/product/blobs/etc/sysconfig/google-rollback-package-whitelist.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/google-rollback-package-whitelist.xml \
+     vendor/gapps/product/blobs/etc/sysconfig/google-staged-installer-whitelist.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/google-staged-installer-whitelist.xml \
+@@ -70,10 +76,6 @@ PRODUCT_COPY_FILES += \
+     vendor/gapps/product/blobs/lib64/libmotricity.so:$(TARGET_COPY_OUT_PRODUCT)/lib64/libmotricity.so \
+     vendor/gapps/product/blobs/lib64/libsketchology_native.so:$(TARGET_COPY_OUT_PRODUCT)/lib64/libsketchology_native.so
+ 
+-PRODUCT_COPY_FILES += \
+-    vendor/gapps/product/blobs/lib/libdmengine.so:$(TARGET_COPY_OUT_PRODUCT)/lib/libdmengine.so \
+-    vendor/gapps/product/blobs/lib/libdmjavaplugin.so:$(TARGET_COPY_OUT_PRODUCT)/lib/libdmjavaplugin.so
+-
+ PRODUCT_COPY_FILES += \
+     vendor/gapps/product/blobs/usr/share/ime/google/d3_lms/ko_2018030706.zip:$(TARGET_COPY_OUT_PRODUCT)/usr/share/ime/google/d3_lms/ko_2018030706.zip \
+     vendor/gapps/product/blobs/usr/share/ime/google/d3_lms/mozc.data:$(TARGET_COPY_OUT_PRODUCT)/usr/share/ime/google/d3_lms/mozc.data \
 diff --git a/product/packages/privileged_apps/DMService/Android.mk b/product/packages/privileged_apps/DMService/Android.mk
 index 8a4a785..c4a447b 100644
 --- a/product/packages/privileged_apps/DMService/Android.mk
@@ -62,3 +125,19 @@ index d5eca87..aa31b57 100644
 -	$(hide) ln -sf /product/lib64/libmotricity.so $@
 -
 -ALL_DEFAULT_INSTALLED_MODULES += $(LIBAKUAF_SYMLINK) $(LIBMOTRICITY_SYMLINK)
+diff --git a/system_ext/blobs/system-ext_blobs.mk b/system_ext/blobs/system-ext_blobs.mk
+index 69ecd9a..7b44ce5 100644
+--- a/system_ext/blobs/system-ext_blobs.mk
++++ b/system_ext/blobs/system-ext_blobs.mk
+@@ -16,6 +16,10 @@
+ #
+ #
+ 
++ifneq ($(filter walleye taimen blueline crosshatch bonito sargo flame coral sunfish bramble redfin, $(TARGET_DEVICE)),)
++PRODUCT_COPY_FILES += \
++    vendor/gapps/system_ext/blobs/etc/permissions/com.verizon.llkagent.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/com.verizon.llkagent.xml
++endif
++
+ PRODUCT_COPY_FILES += \
+-    vendor/gapps/system_ext/blobs/etc/permissions/com.verizon.llkagent.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/com.verizon.llkagent.xml \
+     vendor/gapps/system_ext/blobs/etc/permissions/privapp-permissions-google-se.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/privapp-permissions-google-se.xml
