@@ -1,21 +1,19 @@
 #!/bin/bash
-# Обходы для оффлайн-сборки PixelExperience Plus A11 (инфраструктура PE частично мертва).
-# Workarounds for building PixelExperience Plus A11 offline (PE infra is partly dead).
-# Запускать из корня дерева ПОСЛЕ repo sync. / Run from the tree root AFTER repo sync.
+# Works around PixelExperience infrastructure that is gone. Run from the source tree root
+# after repo sync.
 set -e
 ROOT="$(pwd)"
 
-# 1) get_official_devices.py лезет на мёртвый сервер PE без таймаута -> висит вечно.
-#    gta4l unofficial, правильный ответ = пусто. / hangs forever on the dead PE server; stub it.
+# get_official_devices.py queries the defunct PixelExperience official devices server with
+# no timeout and hangs the build. The device is unofficial, so the right answer is empty.
 F="$ROOT/vendor/aosp/tools/get_official_devices.py"
 if [ -f "$F" ] && ! grep -q 'offline' "$F"; then
-  [ -f "$F.orig" ] || cp "$F" "$F.orig"
   cat > "$F" <<'EOF'
-# offline stub: original hung on the dead PixelExperience official_devices server.
-# gta4l is unofficial, so the correct answer is empty.
+# offline stub: the PixelExperience official devices server is gone, and the device is
+# unofficial, so the list is empty.
 print("")
 EOF
   echo "[ok] stubbed get_official_devices.py"
 fi
 
-echo "[done] Теперь: source build/envsetup.sh && lunch aosp_gta4l-userdebug && export ALLOW_MISSING_DEPENDENCIES=true && mka bacon"
+echo "[done] source build/envsetup.sh && lunch aosp_gta4l-user && mka bacon"

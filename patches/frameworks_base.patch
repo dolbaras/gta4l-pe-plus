@@ -204,20 +204,3 @@ index 2a43e0da..4f1f3887 100644
      /**
      * Start screen recording
      */
-diff --git a/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml b/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml
-index 96ed7b4c..be4fd456 100644
---- a/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml
-+++ b/packages/overlays/NavigationBarModeGesturalOverlay/res/values/config.xml
-@@ -30,8 +30,10 @@
-     <!-- Controls whether the navigation bar lets through taps. -->
-     <bool name="config_navBarTapThrough">true</bool>
- 
--    <!-- Controls the size of the back gesture inset. -->
--    <dimen name="config_backGestureInset">24dp</dimen>
-+    <!-- Controls the size of the back gesture inset. Raised 24dp->40dp so the left/right
-+         back-swipe zones are more forgiving on the SM-T50x forced-1080p (upscaled) display,
-+         where touch input near the edges is scaled and less precise. -->
-+    <dimen name="config_backGestureInset">40dp</dimen>
- 
-     <!-- Controls whether the navbar needs a scrim with
-      {@link Window#setEnsuringNavigationBarContrastWhenTransparent}. -->

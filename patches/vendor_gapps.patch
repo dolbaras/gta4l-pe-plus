@@ -61,6 +61,36 @@ index 3638e6d..2d8b57e 100644
  PRODUCT_COPY_FILES += \
      vendor/gapps/product/blobs/usr/share/ime/google/d3_lms/ko_2018030706.zip:$(TARGET_COPY_OUT_PRODUCT)/usr/share/ime/google/d3_lms/ko_2018030706.zip \
      vendor/gapps/product/blobs/usr/share/ime/google/d3_lms/mozc.data:$(TARGET_COPY_OUT_PRODUCT)/usr/share/ime/google/d3_lms/mozc.data \
+diff --git a/product/packages/apps/GoogleCamera/Android.mk b/product/packages/apps/GoogleCamera/Android.mk
+index 76d5d99..d01fb32 100644
+--- a/product/packages/apps/GoogleCamera/Android.mk
++++ b/product/packages/apps/GoogleCamera/Android.mk
+@@ -18,8 +18,13 @@
+ 
+ LOCAL_PATH := $(call my-dir)
+ 
+-ifneq ($(filter walleye taimen blueline crosshatch bonito sargo flame coral sunfish bramble redfin, $(TARGET_DEVICE)),)
++ifneq ($(filter walleye taimen blueline crosshatch bonito sargo flame coral sunfish bramble redfin gta4l gta4lwifi, $(TARGET_DEVICE)),)
+ 
++# NOTE (gta4l/gta4lwifi): GoogleCamera.apk here is a MODDED GCam port
++# (MGC 8.1.101, BSG, package com.android.MGC), NOT the stock Pixel GoogleCamera.
++# The stock Pixel build crashes on this non-Pixel hardware with a Dagger NPE
++# ("Cannot return null from a non-@Nullable @Provides method") because it needs
++# Pixel-only camera features. The MGC port works on SM6115/Adreno 610.
+ include $(CLEAR_VARS)
+ LOCAL_MODULE := GoogleCamera
+ LOCAL_MODULE_TAGS := optional
+@@ -27,6 +32,10 @@ LOCAL_SRC_FILES := GoogleCamera.apk
+ LOCAL_CERTIFICATE := PRESIGNED
+ LOCAL_PRODUCT_MODULE := true
+ LOCAL_OVERRIDES_PACKAGES := Camera2 Snap
++# The MGC port's dex does not survive dex2oat AOT (dexpreopt) with
++# --abort-on-hard-verifier-error. Ship it un-preopted (JIT at runtime), which is
++# how GCam ports normally run and how it was verified working via adb install.
++LOCAL_DEX_PREOPT := false
+ LOCAL_MODULE_CLASS := APPS
+ LOCAL_MODULE_SUFFIX := $(COMMON_ANDROID_PACKAGE_SUFFIX)
+ include $(BUILD_PREBUILT)
 diff --git a/product/packages/privileged_apps/DMService/Android.mk b/product/packages/privileged_apps/DMService/Android.mk
 index 8a4a785..c4a447b 100644
 --- a/product/packages/privileged_apps/DMService/Android.mk
