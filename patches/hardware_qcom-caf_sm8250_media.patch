@@ -1,0 +1,21 @@
+diff --git a/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp b/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp
+index 3b06761..06b5b57 100644
+--- a/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp
++++ b/mm-video-v4l2/vidc/venc/src/video_encoder_device_v4l2_params.cpp
+@@ -63,8 +63,15 @@ void venc_dev::venc_get_consumer_usage(OMX_U32* usage)
+         DEBUG_PRINT_INFO("Clear UBWC consumer usage bits as 8-bit linear color requested");
+     }
+ 
+-    if (venc_handle->is_flip_conv_needed())
++    if (venc_handle->is_flip_conv_needed()) {
+         *usage = *usage | GRALLOC_USAGE_SW_READ_OFTEN;
++    } else if (!(*usage & GRALLOC_USAGE_PRIVATE_ALLOC_UBWC)) {
++        // The encoder never reads its input with the CPU here. Without UBWC (bengal)
++        // gralloc would allocate the linear input buffers cached, and every frame then
++        // pays a CPU cache clean + invalidate over the whole buffer before the GPU (C2D)
++        // and Venus can use it: ~1/2 of a core for 1080x1800 RGBA screen recording.
++        *usage |= GRALLOC_USAGE_PRIVATE_UNCACHED;
++    }
+ 
+     if (m_codec == OMX_VIDEO_CodingImageHEIC) {
+         DEBUG_PRINT_INFO("Clear UBWC and set HEIF consumer usage bit");
