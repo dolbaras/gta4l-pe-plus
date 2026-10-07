@@ -1,0 +1,59 @@
+diff --git a/src/compiler/compiler.cc b/src/compiler/compiler.cc
+index 7d0e624..80cc88b 100644
+--- a/src/compiler/compiler.cc
++++ b/src/compiler/compiler.cc
+@@ -32,6 +32,7 @@
+ #include "rxcpp/rx.hpp"
+ #include <iostream>
+ #include <fstream>
++#include <memory>
+ #include <optional>
+ #include <utility>
+ #include <regex>
+@@ -471,28 +472,27 @@ std::ostream& operator<<(std::ostream& os, const ResolvedPageCacheFtraceEvent& e
+ 
+ struct CombinedState {
+   CombinedState() = default;
+-  explicit CombinedState(InodeMap inode_map) : inode_map{std::move(inode_map)} {}
++  explicit CombinedState(InodeMap inode_map)
++    : inode_map{std::make_shared<const InodeMap>(std::move(inode_map))} {}
+   explicit CombinedState(PageCacheFtraceEvent event) : ftrace_event{std::move(event)} {}
+ 
+   CombinedState(InodeMap inode_map, PageCacheFtraceEvent event)
+-    : inode_map(std::move(inode_map)),
++    : inode_map{std::make_shared<const InodeMap>(std::move(inode_map))},
+       ftrace_event{std::move(event)} {}
+ 
+-  std::optional<InodeMap> inode_map;
++  // Shared, not copied: the scan below copies the state once per ftrace event, and
++  // copying the whole map each time made compilation O(events * inodes) -- minutes
++  // for an app launch that touches a thousand files.
++  std::shared_ptr<const InodeMap> inode_map;
+   std::optional<PageCacheFtraceEvent> ftrace_event;
+ 
+   bool HasAll() const {
+-    return inode_map.has_value() && ftrace_event.has_value();
++    return inode_map != nullptr && ftrace_event.has_value();
+   }
+ 
+   const InodeMap& GetInodeMap() const {
+     DCHECK(HasAll());
+-    return inode_map.value();
+-  }
+-
+-  InodeMap& GetInodeMap() {
+-    DCHECK(HasAll());
+-    return inode_map.value();
++    return *inode_map;
+   }
+ 
+   const PageCacheFtraceEvent& GetEvent() const {
+@@ -518,7 +518,7 @@ struct CombinedState {
+ std::ostream& operator<<(std::ostream& os, const CombinedState& s) {
+   os << "CombinedState{inode_map:";
+   if (s.inode_map) {
+-    os << "|sz=" << (s.inode_map.value().size()) << "|";
++    os << "|sz=" << (s.inode_map->size()) << "|";
+   } else {
+     os << "(null)";
+   }
